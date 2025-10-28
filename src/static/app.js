@@ -20,6 +20,50 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const spotsLeft = details.max_participants - details.participants.length;
 
+        // Cria lista de participantes sem bullets e com ícone de deletar
+        const participantsList = document.createElement("ul");
+        participantsList.className = "participants-list";
+        details.participants.forEach(participant => {
+          const li = document.createElement("li");
+          li.className = "participant-item";
+          li.style.display = "flex";
+          li.style.alignItems = "center";
+          li.style.gap = "8px";
+          // Email
+          const emailSpan = document.createElement("span");
+          emailSpan.textContent = participant;
+          // Ícone de deletar
+          const deleteBtn = document.createElement("button");
+          deleteBtn.className = "delete-participant-btn";
+          deleteBtn.title = "Remover participante";
+          deleteBtn.innerHTML = "&#128465;"; // ícone de lixeira unicode
+          deleteBtn.style.background = "none";
+          deleteBtn.style.border = "none";
+          deleteBtn.style.cursor = "pointer";
+          deleteBtn.style.color = "#c62828";
+          deleteBtn.style.fontSize = "1.1em";
+          deleteBtn.addEventListener("click", async (e) => {
+            e.preventDefault();
+            if (!confirm(`Remover ${participant} de ${name}?`)) return;
+            try {
+              const resp = await fetch(`/activities/${encodeURIComponent(name)}/participants/${encodeURIComponent(participant)}`, {
+                method: "DELETE"
+              });
+              const result = await resp.json();
+              if (resp.ok) {
+                fetchActivities();
+              } else {
+                alert(result.detail || "Erro ao remover participante");
+              }
+            } catch (err) {
+              alert("Erro ao remover participante");
+            }
+          });
+          li.appendChild(emailSpan);
+          li.appendChild(deleteBtn);
+          participantsList.appendChild(li);
+        });
+
         activityCard.innerHTML = `
           <h4>${name}</h4>
           <p>${details.description}</p>
@@ -27,11 +71,9 @@ document.addEventListener("DOMContentLoaded", () => {
           <p><strong>Availability:</strong> ${spotsLeft} spots left</p>
           <div class="participants">
             <strong>Participants:</strong>
-            <ul>
-              ${details.participants.map(participant => `<li>${participant}</li>`).join("")}
-            </ul>
           </div>
         `;
+        activityCard.querySelector(".participants").appendChild(participantsList);
 
         activitiesList.appendChild(activityCard);
 
